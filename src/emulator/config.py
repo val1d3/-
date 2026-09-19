@@ -6,9 +6,8 @@ class EmulatorConfig:
 
     def __init__(self, vfs_path=None):
         self.vfs_path = vfs_path
+        self.vfs_name = "VFS"  # имя VFS, пока просто зафиксировано в коде
 
     def get_vfs_name(self):
         """Вернуть имя VFS для показа в заголовке окна."""
-        if self.vfs_path is None:
-            return "no-vfs"
-        return self.vfs_path
+        return self.vfs_nam
