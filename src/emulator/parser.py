@@ -6,7 +6,7 @@ class ParserError(Exception):
     pass
 
 def parse_line(line):
-    line = line.strip() #стирка ненужных пробелов по краям
+    line = line.strip()
 
     if line == "":
         return [] 

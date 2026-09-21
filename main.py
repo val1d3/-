@@ -9,3 +9,4 @@ from emulator.gui import EmulatorApp
 config = EmulatorConfig()
 app = EmulatorApp(config)
 app.run()
+'ls, ls -la /tmp, cd, cd /home/user, cd "My Documents", exit hello, qwerty, exit'
