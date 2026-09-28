@@ -1,2 +1,3 @@
 @echo off
-python main.py
+py main.py %*
+if errorlevel 9009 python main.py %*
