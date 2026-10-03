@@ -16,7 +16,9 @@ def read_script_lines(path):
         with open(path, "r", encoding="utf-8") as script_file:
             all_lines = script_file.readlines()
     except (OSError, UnicodeDecodeError) as error:
-        raise ScriptError("не удалось прочитать скрипт " + path + ": " + str(error))
+        raise ScriptError(
+            "не удалось прочитать скрипт " + path + ": " + str(error)
+        )
 
     lines = []
     for raw_line in all_lines:
