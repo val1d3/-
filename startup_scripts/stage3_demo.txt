@@ -1,0 +1,6 @@
+ls -la /tmp
+cd "My Documents"
+conf-dump
+qwerty
+exit now
+cd ..
