@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vfs name="BrokenVFS">
+    <file name="bad.txt">не_base64!!!</file>
