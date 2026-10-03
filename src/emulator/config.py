@@ -8,24 +8,19 @@ class EmulatorConfig:
 
     Атрибуты:
         vfs_path - путь к физическому расположению VFS (или None);
-        script_path - путь к стартовому скрипту (или None);
-        vfs_name - имя VFS для заголовка окна, пока зафиксировано в коде.
+        script_path - путь к стартовому скрипту (или None).
     """
 
     def __init__(self, vfs_path=None, script_path=None):
         self.vfs_path = vfs_path
         self.script_path = script_path
-        self.vfs_name = "MyVFS"
 
     def get_vfs_name(self):
-        """Вернуть имя VFS для показа в заголовке окна."""
-        return self.vfs_name
+        """Вернуть имя VFS по умолчанию, пока настоящая VFS не загружена."""
+        return "no-vfs"
 
     def as_dict(self):
-        """Вернуть параметры запуска в виде словаря ключ-значение.
-
-        Если параметр не задан, вместо None подставляется пустая строка.
-        """
+        """Вернуть параметры запуска в виде словаря ключ-значение."""
         params = {}
 
         if self.vfs_path is None:
@@ -42,11 +37,7 @@ class EmulatorConfig:
 
 
 def parse_args(argv):
-    """Разобрать параметры командной строки и вернуть EmulatorConfig.
-
-    Поддерживаются параметры --vfs-path и --script. Список argv
-    обычно берётся из sys.argv[1:].
-    """
+    """Разобрать параметры командной строки и вернуть EmulatorConfig."""
     parser = argparse.ArgumentParser(
         description="Эмулятор командной оболочки UNIX-подобной ОС."
     )

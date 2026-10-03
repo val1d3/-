@@ -5,6 +5,7 @@ import tkinter
 from emulator.parser import parse_line, split_command, ParserError
 from emulator.commands import execute, CommandError
 from emulator.script import read_script_lines, ScriptError
+from emulator.vfs import load_vfs, VfsError
 
 
 class EmulatorApp:
@@ -13,6 +14,8 @@ class EmulatorApp:
     def __init__(self, config):
         self.config = config
         self.exit_requested = False
+        self.vfs_name = None
+        self.vfs_root = None
 
         self.window = tkinter.Tk()
         self.window.title(config.get_vfs_name())
@@ -24,6 +27,7 @@ class EmulatorApp:
         self.input_box.pack()
         self.input_box.bind("<Return>", self.on_enter_pressed)
 
+        self.load_vfs_if_needed()
         self.print_startup_params()
 
         if config.script_path is not None:
@@ -32,6 +36,26 @@ class EmulatorApp:
     def print_line(self, text):
         """Добавить строку текста в область вывода."""
         self.output_box.insert(tkinter.END, text + "\n")
+
+    def load_vfs_if_needed(self):
+        """Загрузить VFS в память, если задан путь к ней.
+
+        При успешной загрузке заголовок окна меняется на имя VFS из
+        XML-файла. Если загрузка не удалась, выводится сообщение об
+        ошибке, а заголовок остаётся прежним.
+        """
+        if self.config.vfs_path is None:
+            return
+
+        try:
+            vfs_name, vfs_root = load_vfs(self.config.vfs_path)
+        except VfsError as error:
+            self.print_line("ошибка: " + str(error))
+            return
+
+        self.vfs_name = vfs_name
+        self.vfs_root = vfs_root
+        self.window.title(vfs_name)
 
     def print_startup_params(self):
         """Вывести в окно все параметры, с которыми запущен эмулятор."""
@@ -42,11 +66,7 @@ class EmulatorApp:
         self.print_line("-------------------------")
 
     def run_line(self, line):
-        """Разобрать и выполнить одну строку команды.
-
-        Ошибки выводятся в окно, работа программы при этом не прерывается.
-        Если выполнена команда exit, выставляется флаг exit_requested.
-        """
+        """Разобрать и выполнить одну строку команды."""
         try:
             tokens = parse_line(line)
         except ParserError as error:
@@ -70,12 +90,7 @@ class EmulatorApp:
             self.print_line(result)
 
     def run_script(self, path):
-        """Выполнить стартовый скрипт построчно, как будто команды ввели вручную.
-
-        Для каждой строки сначала выводится ввод, затем результат.
-        Ошибочные строки пропускаются, выполнение идёт дальше.
-        Если сам файл скрипта прочитать нельзя, выводится сообщение об ошибке.
-        """
+        """Выполнить стартовый скрипт построчно, как будто команды ввели вручную."""
         try:
             lines = read_script_lines(path)
         except ScriptError as error:
