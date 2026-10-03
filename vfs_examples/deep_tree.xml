@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vfs name="DeepTreeVFS">
+    <directory name="home">
+        <directory name="user">
+            <directory name="projects">
+                <file name="main.py">cHJpbnQoIkhlbGxvIik=</file>
+            </directory>
+            <file name="profile.txt">0J/RgNC+0YTQuNC70Yw=</file>
+        </directory>
+    </directory>
+    <directory name="etc">
+        <file name="config.conf">a2V5PXZhbHVl</file>
+    </directory>
+</vfs>
