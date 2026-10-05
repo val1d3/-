@@ -26,7 +26,8 @@ class TestLoadVfs(unittest.TestCase):
 
     def test_minimal_vfs(self):
         content = base64.b64encode(b"hello").decode("ascii")
-        xml_text = '<vfs name="Test"><file name="a.txt">' + content + "</file></vfs>"
+        xml_text = ('<vfs name="Test"><file name="a.txt">' +
+                    content + "</file></vfs>")
         path = make_temp_xml(xml_text)
         try:
             vfs_name, root = load_vfs(path)
@@ -62,7 +63,8 @@ class TestLoadVfs(unittest.TestCase):
     def test_binary_content_round_trip(self):
         binary_data = bytes([0, 1, 2, 255, 254, 10, 13])
         content = base64.b64encode(binary_data).decode("ascii")
-        xml_text = '<vfs name="Test"><file name="bin.dat">' + content + "</file></vfs>"
+        xml_text = ('<vfs name="Test"><file name="bin.dat">' + content
+                    + "</file></vfs>")
         path = make_temp_xml(xml_text)
         try:
             vfs_name, root = load_vfs(path)
@@ -92,7 +94,9 @@ class TestLoadVfs(unittest.TestCase):
             os.remove(path)
 
     def test_invalid_base64_raises_error(self):
-        path = make_temp_xml('<vfs name="Test"><file name="a.txt">не_base64!!!</file></vfs>')
+        path = make_temp_xml(
+            '<vfs name="Test"><file name="a.txt">не_base64!!!</file></vfs>'
+        )
         try:
             with self.assertRaises(VfsError):
                 load_vfs(path)
