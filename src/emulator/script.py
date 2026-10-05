@@ -7,11 +7,7 @@ class ScriptError(Exception):
 
 
 def read_script_lines(path):
-    """Прочитать файл скрипта и вернуть список непустых строк.
-
-    Пустые строки пропускаются. Если файл нельзя открыть или прочитать,
-    выбрасывается ScriptError.
-    """
+    """Прочитать файл скрипта и вернуть список непустых строк."""
     try:
         with open(path, "r", encoding="utf-8") as script_file:
             all_lines = script_file.readlines()

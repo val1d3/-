@@ -1,7 +1,7 @@
 """Загрузка виртуальной файловой системы (VFS) из XML-файла."""
 
 import base64
-import xml.etree.ElementTree as ElementTree
+import xml.etree.ElementTree as element_tree
 
 
 class VfsError(Exception):
@@ -16,7 +16,7 @@ class VfsNode:
         name - имя узла;
         is_dir - True для каталога, False для файла;
         children - словарь {имя: VfsNode}, заполнен только у каталогов;
-        content - содержимое файла в виде байтов, заполнено только у файлов.
+        content - содержимое файла в байтах, заполнено только у файлов.
     """
 
     def __init__(self, name, is_dir):
@@ -48,7 +48,9 @@ def build_node(element):
         try:
             node.content = base64.b64decode(text)
         except ValueError as error:
-            raise VfsError("неверные base64-данные в файле " + name + ": " + str(error))
+            raise VfsError(
+                "неверные base64-данные в файле " + name + ": " + str(error)
+            )
         return node
 
     raise VfsError("неизвестный элемент в VFS: " + element.tag)
@@ -62,10 +64,10 @@ def load_vfs(path):
     или не соответствует формату, выбрасывается VfsError.
     """
     try:
-        tree = ElementTree.parse(path)
+        tree = element_tree.parse(path)
     except OSError as error:
         raise VfsError("не удалось открыть VFS " + path + ": " + str(error))
-    except ElementTree.ParseError as error:
+    except element_tree.ParseError as error:
         raise VfsError("неверный формат VFS " + path + ": " + str(error))
 
     root_element = tree.getroot()
