@@ -123,6 +123,47 @@ class TestTac(unittest.TestCase):
         with self.assertRaises(CommandError):
             execute("tac", ["nope"], None, make_state())
 
+class TestTouch(unittest.TestCase):
+    """Проверки команды touch."""
+
+    def test_create(self):
+        state = make_state()
+        execute("touch", ["new.txt"], None, state)
+        self.assertEqual(execute("ls", [], None, state),
+                         "bin.dat\nhome/\nnew.txt")
+        self.assertEqual(execute("tac", ["new.txt"], None, state), "")
+
+    def test_create_in_subdir_and_several(self):
+        state = make_state()
+        execute("cd", ["home"], None, state)
+        execute("touch", ["a.txt", "../b.txt"], None, state)
+        self.assertEqual(execute("ls", [], None, state),
+                         "a.txt\ntodo.txt")
+        self.assertEqual(execute("ls", ["/"], None, state),
+                         "b.txt\nbin.dat\nhome/")
+
+    def test_existing_not_changed(self):
+        state = make_state()
+        execute("touch", ["home/todo.txt"], None, state)
+        self.assertEqual(
+            execute("tac", ["home/todo.txt"], None, state),
+            "three\ntwo\none")
+
+    def test_missing_parent(self):
+        with self.assertRaises(CommandError):
+            execute("touch", ["nope/a.txt"], None, make_state())
+
+    def test_parent_is_file(self):
+        with self.assertRaises(CommandError):
+            execute("touch", ["bin.dat/a.txt"], None, make_state())
+
+    def test_no_args(self):
+        with self.assertRaises(CommandError):
+            execute("touch", [], None, make_state())
+
+    def test_no_vfs(self):
+        with self.assertRaises(CommandError):
+            execute("touch", ["a.txt"], None, ShellState())
 
 if __name__ == "__main__":
     unittest.main()
