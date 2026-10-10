@@ -14,6 +14,8 @@
 - заголовок окна равен имени виртуальной файловой системы (VFS),
   а без VFS заголовок `no-vfs`;
 - VFS загружается из XML-файла и целиком хранится в памяти;
+- изменения VFS (команда `touch`) делаются только в памяти, XML-файл
+  на диске не меняется;
 - команды можно выполнять из стартового скрипта, при этом ввод и вывод
   выглядят как обычный диалог с пользователем;
 - ошибки (неверная команда, нет файла, плохой XML) выводятся как
@@ -50,6 +52,7 @@
 | `cd [путь]` | меняет текущую папку; без аргумента переходит в корень; поддерживаются `.`, `..` и абсолютные пути вида `/home` |
 | `uptime` | время работы эмулятора в формате `up ЧЧ:ММ:СС` |
 | `tac файл...` | выводит строки файла (файлов) VFS в обратном порядке |
+| `touch файл...` | создаёт пустой файл в VFS; если файл уже есть, ничего не меняет; изменения только в памяти |
 | `conf-dump` | выводит параметры запуска в формате `ключ=значение` |
 | `exit` | завершает работу эмулятора |
 
@@ -59,8 +62,9 @@
 
 - неизвестная команда, незакрытая кавычка;
 - лишние или недостающие аргументы;
-- `ls`, `cd`, `tac` без загруженной VFS;
+- `ls`, `cd`, `tac`, `touch` без загруженной VFS;
 - путь не найден, `cd` в файл, `tac` для папки или нетекстового файла;
+- `touch`: нет родительской папки или родитель не является папкой;
 - не найден или не читается скрипт, неверный XML в VFS.
 
 ### Формат VFS (XML)
@@ -83,8 +87,8 @@
 
     .\run.bat
     .\run.bat --vfs-path vfs_examples/deep_tree.xml
-    .\run.bat --script startup_scripts/stage4_demo.txt
-    .\run.bat --vfs-path vfs_examples/deep_tree.xml --script startup_scripts/stage4_demo.txt
+    .\run.bat --script startup_scripts/stage5_demo.txt
+    .\run.bat --vfs-path vfs_examples/deep_tree.xml --script startup_scripts/stage5_demo.txt
 
 Запуск (Linux / macOS):
 
@@ -94,6 +98,8 @@
 
     .\os_scripts\test_stage4.bat
     .\os_scripts\test_stage4_no_vfs.bat
+    .\os_scripts\test_stage5.bat
+    .\os_scripts\test_stage5_no_vfs.bat
 
 Модульные тесты:
 
@@ -123,6 +129,19 @@
     $ cd
     $ uptime
     up 00:00:03
+
+Создание файлов (только в памяти):
+
+    $ cd home/user
+    $ touch notes.txt
+    $ ls
+    notes.txt
+    profile.txt
+    projects/
+    $ touch nope/file.txt
+    ошибка: nope/file.txt: нет такого файла или папки: nope
+    $ touch
+    ошибка: touch: не указан файл
 
 Обработка ошибок:
 
