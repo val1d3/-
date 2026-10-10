@@ -3,7 +3,7 @@
 import time
 
 from emulator.navigation import NavigationError, split_path, find_node
-
+from emulator.vfs import VfsNode
 
 class CommandError(Exception):
     """Ошибка выполнения команды."""
@@ -109,6 +109,28 @@ def cmd_tac(args, state):
         result.extend(lines)
     return "\n".join(result)
 
+def cmd_touch(args, state):
+    """Создать пустые файлы в VFS (только в памяти)."""
+    need_vfs(state)
+    if len(args) == 0:
+        raise CommandError("touch: не указан файл")
+
+    for path_text in args:
+        parts = split_path(path_text, state.current_parts)
+        if len(parts) == 0:
+            continue
+
+        try:
+            parent = find_node(state.root, parts[:-1])
+        except NavigationError as error:
+            raise CommandError(path_text + ": " + str(error))
+        if not parent.is_dir:
+            raise CommandError(path_text + ": родитель не папка")
+
+        name = parts[-1]
+        if name not in parent.children:
+            parent.children[name] = VfsNode(name, False)
+    return ""
 
 def cmd_exit(args):
     """Завершить работу эмулятора."""
@@ -140,6 +162,8 @@ def execute(command, args, config=None, state=None):
         return cmd_uptime(args, state)
     elif command == "tac":
         return cmd_tac(args, state)
+    elif command == "touch":
+        return cmd_touch(args, state)
     elif command == "exit":
         return cmd_exit(args)
     elif command == "conf-dump":
