@@ -3,7 +3,7 @@
 import tkinter
 
 from emulator.parser import parse_line, split_command, ParserError
-from emulator.commands import execute, CommandError
+from emulator.commands import execute, CommandError, ShellState
 from emulator.script import read_script_lines, ScriptError
 from emulator.vfs import load_vfs, VfsError
 
@@ -16,6 +16,7 @@ class EmulatorApp:
         self.exit_requested = False
         self.vfs_name = None
         self.vfs_root = None
+        self.state = ShellState()
 
         self.window = tkinter.Tk()
         self.window.title(config.get_vfs_name())
@@ -55,6 +56,7 @@ class EmulatorApp:
 
         self.vfs_name = vfs_name
         self.vfs_root = vfs_root
+        self.state.root = vfs_root
         self.window.title(vfs_name)
 
     def print_startup_params(self):
@@ -79,14 +81,14 @@ class EmulatorApp:
         command, args = split_command(tokens)
 
         try:
-            result = execute(command, args, self.config)
+            result = execute(command, args, self.config, self.state)
         except CommandError as error:
             self.print_line("ошибка: " + str(error))
             return
 
         if result == "exit":
             self.exit_requested = True
-        else:
+        elif result != "":
             self.print_line(result)
 
     def run_script(self, path):
