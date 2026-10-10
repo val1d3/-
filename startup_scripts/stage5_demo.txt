@@ -1,0 +1,19 @@
+ls
+touch new.txt
+ls
+cd home/user
+touch notes.txt
+ls
+touch a.txt b.txt
+ls
+touch a.txt
+cd /
+touch etc/config.conf
+touch home/user/projects/readme.md
+ls home/user/projects
+touch ../../../x.txt
+ls
+tac new.txt
+touch nope/file.txt
+touch home/user/profile.txt/x.txt
+touch
