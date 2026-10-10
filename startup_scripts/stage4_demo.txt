@@ -1,0 +1,27 @@
+conf-dump
+uptime
+ls
+ls home
+ls home/user/projects
+ls etc/config.conf
+cd home/user
+ls
+tac profile.txt
+cd projects
+tac main.py
+cd ../..
+ls
+cd /etc
+tac config.conf
+cd
+ls
+tac home/user/profile.txt etc/config.conf
+ls nope
+cd nope
+cd etc/config.conf
+tac home
+tac nope.txt
+tac
+uptime 5
+ls a b
+cd a b

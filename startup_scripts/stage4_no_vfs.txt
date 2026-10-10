@@ -1,0 +1,4 @@
+uptime
+ls
+cd home
+tac file.txt
