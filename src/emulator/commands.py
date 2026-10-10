@@ -122,7 +122,7 @@ def cmd_conf_dump(args, config):
     if len(args) > 0:
         raise CommandError("conf-dump: команда не принимает аргументов")
     if config is None:
-        return ""
+        raise CommandError("conf-dump: нет параметров запуска")
     params = config.as_dict()
     lines = []
     for key in params:
