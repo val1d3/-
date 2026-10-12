@@ -1,5 +1,5 @@
 """Загрузка виртуальной файловой системы (VFS) из XML-файла."""
-
+import time
 import base64
 import xml.etree.ElementTree as element_tree
 
@@ -24,6 +24,8 @@ class VfsNode:
         self.is_dir = is_dir
         self.children = {}
         self.content = b""
+        self.mtime = time.time()
+
 
 
 def build_node(element):
