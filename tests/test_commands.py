@@ -290,6 +290,20 @@ class TestStrictPaths(unittest.TestCase):
     def test_through_file(self):
         with self.assertRaises(CommandError):
             execute("cd", ["bin.dat/.."], None, make_state())
+class TestTouchTime(unittest.TestCase):
+    """Проверки времени изменения у touch."""
+
+    def test_update_time(self):
+        state = make_state()
+        node = state.root.children["bin.dat"]
+        node.mtime = 0
+        execute("touch", ["bin.dat"], None, state)
+        self.assertGreater(node.mtime, 0)
+
+    def test_new_file_has_time(self):
+        state = make_state()
+        execute("touch", ["new.txt"], None, state)
+        self.assertGreater(state.root.children["new.txt"].mtime, 0)
 
 if __name__ == "__main__":
     unittest.main()

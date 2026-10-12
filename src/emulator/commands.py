@@ -191,10 +191,11 @@ def cmd_tac(args, state):
 
 
 def touch_path(state, path_text):
-    """Создать файл по пути, если его ещё нет."""
+    """Создать файл по пути или обновить время изменения у узла."""
     head, slash, name = path_text.rpartition("/")
     if name == "" or name == "." or name == "..":
-        find_by_text(state, path_text)
+        node, parts = find_by_text(state, path_text)
+        node.mtime = time.time()
         return
 
     dir_text = "."
@@ -206,12 +207,14 @@ def touch_path(state, path_text):
     if not parent.is_dir:
         raise CommandError(path_text + ": родитель не папка")
 
-    if name not in parent.children:
+    if name in parent.children:
+        parent.children[name].mtime = time.time()
+    else:
         parent.children[name] = VfsNode(name, False)
 
 
 def cmd_touch(args, state):
-    """Создать пустой файл в VFS (только в памяти)."""
+    """Создать пустой файл или обновить время изменения (в памяти)."""
     need_vfs(state)
     if len(args) == 0:
         raise CommandError("touch: не указан файл")
