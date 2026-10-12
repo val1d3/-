@@ -235,6 +235,61 @@ class TestTouchTime(unittest.TestCase):
         state = make_state()
         execute("touch", ["new.txt"], None, state)
         self.assertGreater(state.root.children["new.txt"].mtime, 0)
+class TestLsOptions(unittest.TestCase):
+    """Проверки опций команды ls."""
+
+    def test_hidden_files(self):
+        state = make_state()
+        execute("touch", [".hid"], None, state)
+        self.assertEqual(execute("ls", [], None, state),
+                         "bin.dat\nhome/")
+        self.assertEqual(execute("ls", ["-a"], None, state),
+                         "./\n../\n.hid\nbin.dat\nhome/")
+
+    def test_long(self):
+        lines = execute("ls", ["-l"], None, make_state()).split("\n")
+        self.assertEqual(len(lines), 2)
+        self.assertTrue(lines[0].startswith("-"))
+        self.assertTrue(lines[0].endswith(" bin.dat"))
+        self.assertTrue(lines[1].startswith("d 4096 "))
+        self.assertTrue(lines[1].endswith(" home/"))
+
+    def test_human(self):
+        result = execute("ls", ["-lh"], None, make_state())
+        self.assertIn("4.0K", result)
+        result = execute("ls", ["-l"], None, make_state())
+        self.assertNotIn("4.0K", result)
+
+    def test_combined_forms(self):
+        state = make_state()
+        first = execute("ls", ["-lah"], None, state)
+        second = execute("ls", ["-l", "-h", "-a"], None, state)
+        third = execute("ls", ["-a", "-lh", "/"], None, state)
+        self.assertEqual(first, second)
+        self.assertEqual(first, third)
+
+    def test_unknown_option(self):
+        with self.assertRaises(CommandError):
+            execute("ls", ["-x"], None, make_state())
+
+
+class TestStrictPaths(unittest.TestCase):
+    """Проверки разбора путей с . и .."""
+
+    def test_missing_middle_part(self):
+        state = make_state()
+        with self.assertRaises(CommandError):
+            execute("cd", ["home/date/../../home"], None, state)
+        self.assertEqual(state.get_current_path(), "/")
+
+    def test_dots(self):
+        state = make_state()
+        execute("cd", ["home/./../home/././"], None, state)
+        self.assertEqual(state.get_current_path(), "/home")
+
+    def test_through_file(self):
+        with self.assertRaises(CommandError):
+            execute("cd", ["bin.dat/.."], None, make_state())
 
 if __name__ == "__main__":
     unittest.main()

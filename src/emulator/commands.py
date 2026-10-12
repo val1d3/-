@@ -5,6 +5,9 @@ import time
 from emulator.navigation import NavigationError, find_node, resolve_path
 from emulator.vfs import VfsNode
 
+KILO = 1024
+DIR_SIZE = 4096
+
 
 class CommandError(Exception):
     """Ошибка выполнения команды."""
@@ -55,7 +58,7 @@ def parse_ls_args(args):
 def get_size(node):
     """Размер узла в байтах (для папки условно 4096)."""
     if node.is_dir:
-        return 4096
+        return DIR_SIZE
     return len(node.content)
 
 
@@ -65,11 +68,11 @@ def format_size(size, human):
         return str(size)
     value = float(size)
     for unit in ["", "K", "M", "G"]:
-        if value < 1024 or unit == "G":
+        if value < KILO or unit == "G":
             if unit == "":
                 return str(size)
             return "%.1f%s" % (value, unit)
-        value = value / 1024
+        value = value / KILO
 
 
 def format_long_lines(entries, human):
@@ -92,6 +95,32 @@ def format_long_lines(entries, human):
     return lines
 
 
+def collect_entries(state, node, parts, letters):
+    """Собрать список (имя, узел) для вывода ls."""
+    if not node.is_dir:
+        return [(node.name, node)]
+
+    show_all = "a" in letters
+    entries = []
+    if show_all:
+        entries.append((".", node))
+        entries.append(("..", find_node(state.root, parts[:-1])))
+    for name in sorted(node.children):
+        if show_all or not name.startswith("."):
+            entries.append((name, node.children[name]))
+    return entries
+
+
+def format_short_lines(entries):
+    """Собрать строки обычного списка: у папок в конце стоит /."""
+    lines = []
+    for name, node in entries:
+        if node.is_dir:
+            name = name + "/"
+        lines.append(name)
+    return lines
+
+
 def cmd_ls(args, state):
     """Показать содержимое папки; опции: -l подробно, -h, -a скрытые."""
     need_vfs(state)
@@ -99,37 +128,17 @@ def cmd_ls(args, state):
     if len(paths) > 1:
         raise CommandError("ls: слишком много аргументов")
 
+    path_text = "."
     if len(paths) == 1:
-        node, parts = find_by_text(state, paths[0])
-    else:
-        node, parts = find_by_text(state, ".")
-
-    entries = []
-    if not node.is_dir:
-        entries.append((node.name, node))
-    else:
-        if "a" in letters:
-            entries.append((".", node))
-            if len(parts) == 0:
-                entries.append(("..", node))
-            else:
-                entries.append(("..", find_node(state.root, parts[:-1])))
-        for name in sorted(node.children):
-            if "a" in letters or not name.startswith("."):
-                entries.append((name, node.children[name]))
+        path_text = paths[0]
+    node, parts = find_by_text(state, path_text)
+    entries = collect_entries(state, node, parts, letters)
 
     if len(entries) == 0:
         return ""
     if "l" in letters:
         return "\n".join(format_long_lines(entries, "h" in letters))
-
-    lines = []
-    for name, child in entries:
-        if child.is_dir and node.is_dir:
-            lines.append(name + "/")
-        else:
-            lines.append(name)
-    return "\n".join(lines)
+    return "\n".join(format_short_lines(entries))
 
 
 def cmd_cd(args, state):
@@ -181,33 +190,34 @@ def cmd_tac(args, state):
     return "\n".join(result)
 
 
+def touch_path(state, path_text):
+    """Создать файл по пути, если его ещё нет."""
+    head, slash, name = path_text.rpartition("/")
+    if name == "" or name == "." or name == "..":
+        find_by_text(state, path_text)
+        return
+
+    dir_text = "."
+    if head != "":
+        dir_text = head
+    elif slash != "":
+        dir_text = "/"
+    parent, parts = find_by_text(state, dir_text)
+    if not parent.is_dir:
+        raise CommandError(path_text + ": родитель не папка")
+
+    if name not in parent.children:
+        parent.children[name] = VfsNode(name, False)
+
+
 def cmd_touch(args, state):
-    """Создать пустой файл или обновить время изменения (в памяти)."""
+    """Создать пустой файл в VFS (только в памяти)."""
     need_vfs(state)
     if len(args) == 0:
         raise CommandError("touch: не указан файл")
 
     for path_text in args:
-        head, slash, name = path_text.rpartition("/")
-        if name == "" or name == "." or name == "..":
-            node, parts = find_by_text(state, path_text)
-            node.mtime = time.time()
-            continue
-
-        if slash == "":
-            dir_text = "."
-        elif head == "":
-            dir_text = "/"
-        else:
-            dir_text = head
-        parent, parts = find_by_text(state, dir_text)
-        if not parent.is_dir:
-            raise CommandError(path_text + ": родитель не папка")
-
-        if name in parent.children:
-            parent.children[name].mtime = time.time()
-        else:
-            parent.children[name] = VfsNode(name, False)
+        touch_path(state, path_text)
     return ""
 
 
