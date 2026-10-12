@@ -2,8 +2,9 @@
 
 import time
 
-from emulator.navigation import NavigationError, split_path, find_node
+from emulator.navigation import NavigationError, find_node, resolve_path
 from emulator.vfs import VfsNode
+
 
 class CommandError(Exception):
     """Ошибка выполнения команды."""
@@ -30,31 +31,101 @@ def need_vfs(state):
 
 def find_by_text(state, path_text):
     """Найти узел по тексту пути и вернуть (узел, список имён)."""
-    parts = split_path(path_text, state.current_parts)
     try:
-        node = find_node(state.root, parts)
+        return resolve_path(state.root, state.current_parts, path_text)
     except NavigationError as error:
         raise CommandError(path_text + ": " + str(error))
-    return node, parts
+
+
+def parse_ls_args(args):
+    """Разделить аргументы ls на буквы опций и пути."""
+    letters = ""
+    paths = []
+    for arg in args:
+        if arg.startswith("-") and len(arg) > 1:
+            for letter in arg[1:]:
+                if letter not in "lha":
+                    raise CommandError("ls: неизвестная опция: -" + letter)
+                letters += letter
+        else:
+            paths.append(arg)
+    return letters, paths
+
+
+def get_size(node):
+    """Размер узла в байтах (для папки условно 4096)."""
+    if node.is_dir:
+        return 4096
+    return len(node.content)
+
+
+def format_size(size, human):
+    """Записать размер числом или в виде 4.0K, 1.5M (для опции -h)."""
+    if not human:
+        return str(size)
+    value = float(size)
+    for unit in ["", "K", "M", "G"]:
+        if value < 1024 or unit == "G":
+            if unit == "":
+                return str(size)
+            return "%.1f%s" % (value, unit)
+        value = value / 1024
+
+
+def format_long_lines(entries, human):
+    """Собрать строки подробного списка для ls -l."""
+    sizes = []
+    for name, node in entries:
+        sizes.append(format_size(get_size(node), human))
+    width = max(len(text) for text in sizes)
+
+    lines = []
+    for i in range(len(entries)):
+        name, node = entries[i]
+        kind = "d" if node.is_dir else "-"
+        moment = time.strftime("%Y-%m-%d %H:%M",
+                               time.localtime(node.mtime))
+        if node.is_dir:
+            name = name + "/"
+        lines.append(kind + " " + sizes[i].rjust(width) + " "
+                     + moment + " " + name)
+    return lines
 
 
 def cmd_ls(args, state):
-    """Показать содержимое папки (по умолчанию текущей)."""
+    """Показать содержимое папки; опции: -l подробно, -h, -a скрытые."""
     need_vfs(state)
-    if len(args) > 1:
+    letters, paths = parse_ls_args(args)
+    if len(paths) > 1:
         raise CommandError("ls: слишком много аргументов")
 
-    if len(args) == 1:
-        node, parts = find_by_text(state, args[0])
+    if len(paths) == 1:
+        node, parts = find_by_text(state, paths[0])
     else:
         node, parts = find_by_text(state, ".")
 
+    entries = []
     if not node.is_dir:
-        return node.name
+        entries.append((node.name, node))
+    else:
+        if "a" in letters:
+            entries.append((".", node))
+            if len(parts) == 0:
+                entries.append(("..", node))
+            else:
+                entries.append(("..", find_node(state.root, parts[:-1])))
+        for name in sorted(node.children):
+            if "a" in letters or not name.startswith("."):
+                entries.append((name, node.children[name]))
+
+    if len(entries) == 0:
+        return ""
+    if "l" in letters:
+        return "\n".join(format_long_lines(entries, "h" in letters))
 
     lines = []
-    for name in sorted(node.children):
-        if node.children[name].is_dir:
+    for name, child in entries:
+        if child.is_dir and node.is_dir:
             lines.append(name + "/")
         else:
             lines.append(name)
@@ -109,28 +180,36 @@ def cmd_tac(args, state):
         result.extend(lines)
     return "\n".join(result)
 
+
 def cmd_touch(args, state):
-    """Создать пустые файлы в VFS (только в памяти)."""
+    """Создать пустой файл или обновить время изменения (в памяти)."""
     need_vfs(state)
     if len(args) == 0:
         raise CommandError("touch: не указан файл")
 
     for path_text in args:
-        parts = split_path(path_text, state.current_parts)
-        if len(parts) == 0:
+        head, slash, name = path_text.rpartition("/")
+        if name == "" or name == "." or name == "..":
+            node, parts = find_by_text(state, path_text)
+            node.mtime = time.time()
             continue
 
-        try:
-            parent = find_node(state.root, parts[:-1])
-        except NavigationError as error:
-            raise CommandError(path_text + ": " + str(error))
+        if slash == "":
+            dir_text = "."
+        elif head == "":
+            dir_text = "/"
+        else:
+            dir_text = head
+        parent, parts = find_by_text(state, dir_text)
         if not parent.is_dir:
             raise CommandError(path_text + ": родитель не папка")
 
-        name = parts[-1]
-        if name not in parent.children:
+        if name in parent.children:
+            parent.children[name].mtime = time.time()
+        else:
             parent.children[name] = VfsNode(name, False)
     return ""
+
 
 def cmd_exit(args):
     """Завершить работу эмулятора."""
