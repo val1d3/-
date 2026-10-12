@@ -25,3 +25,15 @@ tac
 uptime 5
 ls a b
 cd a b
+ls -l
+ls -a
+ls -la
+ls -lh
+ls -l -h -a /
+ls -h /home
+ls -x
+ls -l nope
+cd home/user/date/../../nobody/././dat
+cd /home/./user/projects/../../user/./projects
+ls
+cd /

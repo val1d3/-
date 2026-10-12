@@ -17,3 +17,12 @@ tac new.txt
 touch nope/file.txt
 touch home/user/profile.txt/x.txt
 touch
+touch .hidden
+ls
+ls -a
+ls -l /home/user
+touch /home/user/profile.txt
+ls -l /home/user
+touch /home/user/projects/new.py
+ls -lh /home/user/projects
+touch /home/user/date/../x.txt
